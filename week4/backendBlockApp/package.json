@@ -1,0 +1,22 @@
+{
+  "name": "backendblockapp",
+  "version": "1.0.0",
+  "description": "BAckend for capstone project 1",
+  "main": "server.js",
+  "scripts": {
+    "test": "index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookieparser": "^0.1.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.3.0",
+    "nodemon": "^3.1.14"
+  }
+}

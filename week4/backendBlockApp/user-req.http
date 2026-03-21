@@ -1,0 +1,39 @@
+
+###
+GET  http://localhost:5000/auth/users
+
+
+### Register User
+POST http://localhost:5000/user-api/users
+Content-Type: application/json
+
+{
+   "firstName":"user1",
+   "lastName":"",
+   "email":"user@gmail.com",
+   "role":"user",
+   "password":"user1",
+   "profileImageUrl":"https://example.com/avatars/user.png",
+   "isUserActive":""
+}
+
+//USER LOGIN
+###
+POST http://localhost:5000/auth/login
+Content-Type: application/json
+
+{
+   "email":"user2@gmail.com" ,
+   "password":"user2"
+}
+
+###
+//User logOut
+GET http://localhost:5000/auth/logout
+
+###Create new article
+
+
+
+###
+GET http://localhost:5000/author-api/articles
