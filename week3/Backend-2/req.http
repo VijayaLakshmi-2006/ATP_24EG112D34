@@ -1,0 +1,73 @@
+GET  http://localhost:4000/user-api/users
+Cookie:
+
+### Read a user by id
+GET http://localhost:4000/user-api/user
+
+### Create new user
+POST http://localhost:4000/user-api/users
+Content-Type: application/json
+
+{
+   "UserName":"Vijju",
+   "Password":"Teja reddy",
+   "Email":"vijjureddy@gmail.com",
+   "Age":18
+}
+
+###
+PUT http://localhost:4000/user-api/users/69a9451de8a3c96d9af3e0ac
+Content-Type: application/json
+
+{
+   "UserName":"Vijjureddy Vangala",
+   "Password":"Teja reddy30",
+   "Email":"tejareddy@gmail.com",
+   "Age":20
+}
+
+###
+DELETE http://localhost:4000/user-api/users/69a9451de8a3c96d9af3e0ac
+
+###
+POST http://localhost:4000/user-api/auth
+Content-Type: application/json
+
+{
+  "email":"vijju@gmail.com",
+  "password":"tejareddy"
+}
+
+//add product to user id(take product is bcoz we are adding product the user but not to the cart(send productId))
+###
+PUT http://localhost:4000/user-api/cart/product-id/
+
+//Product3
+###
+GET http://localhost:4000/product-api/products  
+
+
+
+###
+POST http://localhost:4000/product-api/product    
+Content-Type: application/json
+
+{
+"productId":1,
+"productName":"Laptop",
+"price":30000,
+"brand":"Dell"
+}
+
+###
+PUT http://localhost:4000/product-api/product/1 
+Content-Type: application/json
+
+{
+"productName":"Gaming Laptop",
+"price":45000,
+"brand":"Dell"
+}
+
+###          
+DELETE http://localhost:4000/product-api/product/1
