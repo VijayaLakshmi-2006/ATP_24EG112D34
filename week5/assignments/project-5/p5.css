@@ -1,0 +1,24 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+.feild{
+    margin-bottom:  20px;
+
+}
+
+form{
+    width: 500px;
+    display: block;
+    margin: auto;
+    padding: 20px;
+    margin-top: 200px;
+    text-align: center;
+    background: lightblue;
+    border-radius: 20px;
+}
+h1{
+text-align: center;
+margin-bottom: 20px;
+}

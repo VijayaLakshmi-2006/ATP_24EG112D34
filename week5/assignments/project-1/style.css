@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Prop+Double+Ink:wght@100..900&family=Tiro+Telugu:ital@0;1&display=swap');/* reset */
+*{
+    /* no need to repeat for every element , gets access for each and every element */
+    box-sizing: border-box;
+    margin: 0%;
+     padding: 0%;  /* default its zero and we can change as per the requirement*/
+}
+
+
+
+
+
+
+
+
+
+
+/* h1{
+    /* width: 100%;
+    max-width: 500px;  grows up to 500px */
+    /* width: 500px;
+    height: 500px;
+    padding: 80px;
+    margin: 100px;
+    border: 2px solid black; */
+    /* background-color: aqua; */
+
+    /* for circle make 50% for border radius */
+    /* margin +padding + border + content = 700*/
+    /* include everything in 500 */
+
+
+    /* colours are 3 types 
+    1.named colours ,cant be changed
+    2.rgb(red ,green,blue) can change intensity from 0-255(256 colours)
+    3.hexa decimal */
+    /* color: rgb(90, 155, 217); */
+/* hex colour web site have templates */
+
+    /* font-size: 40px; */
+     /* websafe ,google(popular)*/
+     /* websafe */
+
+
+     /* google fonts */
+  /* font-family: "Bitcount Prop Double Ink", system-ui; */
+
+
+/* } */
+
+
+/* can have same name but class differenet so that the properties can be differ
+.heading1
+.heading2 
+instead just h1 */ 
+
+img {
+    size: 20px;
+}
+
+.img1{
+    float: left;
+}
+
+
+.img2{
+    display: block;
+    margin: auto;
+}
+
+.img3{
+    float: right;
+}

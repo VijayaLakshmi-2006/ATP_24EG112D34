@@ -1,0 +1,24 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+h1{
+    font-size: clamp(1rem,8vm,3rem);
+}
+img{
+    width: 100%;
+    max-width: 700px;
+}
+@media screen and (min-width:450px){
+    body{
+        background-color: skyblue;
+    }
+    
+}
+@media screen and (max-width:449px){
+    img{
+        display: none;
+    }
+    
+}
