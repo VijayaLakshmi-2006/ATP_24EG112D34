@@ -1,0 +1,148 @@
+import { useAuth } from "../store/authStore";
+import { useNavigate } from "react-router";
+import axios from "axios";
+import { useEffect, useState } from "react";
+
+import {
+  articleGrid,
+  articleCardClass,
+  articleTitle,
+  ghostBtn,
+  loadingClass,
+  errorClass,
+  timestampClass,
+} from "../styles/common.js";
+
+function UserProfile() {
+  const logout = useAuth((state) => state.logout);
+  const currentUser = useAuth((state) => state.currentUser);
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [articles, setArticles] = useState([]);
+
+  useEffect(() => {
+    const getArticles = async () => {
+      setLoading(true);
+      try {
+        //read articles of all authors
+        let res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/user/articles`, { withCredentials: true })
+        //update articles state
+        if (res.status === 200) {
+          setArticles(res.data.payload)
+        }
+      } catch (err) {
+        setError(err.response?.data?.error || "Something went wrong");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getArticles();
+  }, []);
+
+  // convert UTC → IST
+  const formatDateIST = (date) => {
+    return new Date(date).toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  const onLogout = async () => {
+    await logout();
+
+    navigate("/login");
+  };
+
+  const navigateToArticleByID = (articleObj) => {
+    navigate(`/article/${articleObj._id}`, {
+      state: articleObj,
+    });
+  };
+
+  if (loading) {
+    return <p className={loadingClass}>Loading articles...</p>;
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-6 py-10">
+      {/* ERROR */}
+      {error && <p className={errorClass}>{error}</p>}
+
+      {/* PROFILE HEADER */}
+      <div className="bg-white border border-[#e8e8ed] rounded-3xl p-6 mb-8 shadow-sm flex items-center justify-between">
+        {/* LEFT */}
+        <div className="flex items-center gap-4">
+          {/* Avatar */}
+          {currentUser?.profileImageUrl ? (
+            <img
+              src={currentUser.profileImageUrl}
+              className="w-16 h-16 rounded-full object-cover border"
+              alt="profile"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-[#0066cc]/10 text-[#0066cc] flex items-center justify-center text-xl font-semibold">
+              {currentUser?.firstName?.charAt(0).toUpperCase()}
+            </div>
+          )}
+
+          {/* Name */}
+          <div>
+            <p className="text-sm text-[#6e6e73]">Welcome back</p>
+            <h2 className="text-xl font-semibold text-[#1d1d1f]">{currentUser?.firstName}</h2>
+          </div>
+        </div>
+
+        {/* LOGOUT */}
+        <button
+          onClick={onLogout}
+          className="px-4 py-2 bg-[#0066cc] text-white rounded-full hover:bg-[#005bb5] transition"
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* ARTICLES GRID */}
+      <div className={articleGrid}>
+        {articles.length === 0 ? (
+          <p className="text-center text-[#6e6e73] col-span-full py-10">
+            No articles found.
+          </p>
+        ) : (
+          articles.map((article) => (
+            <div
+              key={article._id}
+              onClick={() => navigateToArticleByID(article)}
+              className={articleCardClass}
+            >
+              {/* Image */}
+              {article.imageUrl && (
+                <img
+                  src={article.imageUrl}
+                  className="w-full h-40 object-cover rounded-2xl mb-4"
+                  alt="article"
+                />
+              )}
+
+              {/* Title */}
+              <h3 className={articleTitle}>{article.title}</h3>
+
+              {/* Timestamp */}
+              <p className={timestampClass}>
+                {formatDateIST(article.createdAt)}
+              </p>
+
+              {/* Read more */}
+              <button className={ghostBtn}>Read more →</button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default UserProfile;
