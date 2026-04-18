@@ -1,0 +1,40 @@
+/* control width */
+.form-card {
+  max-width: 700px;
+  margin: auto;
+}
+
+.table-card {
+  max-width: 850px;
+}
+
+/* table styling */
+.custom-table th {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.custom-table td {
+  font-size: 13px;
+}
+
+.custom-table th,
+.custom-table td {
+  padding: 10px;
+}
+
+/* email styling */
+.custom-table td:nth-child(2) {
+  font-size: 12px;
+  word-break: break-word;
+}
+
+/* overall heading */
+h5 {
+  font-size: 18px;
+}
+
+h6 {
+  font-size: 16px;
+}
