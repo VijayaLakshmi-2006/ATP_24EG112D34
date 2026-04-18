@@ -82,7 +82,7 @@ commonApp.put("/password",verifyToken("USER",'AUTHOR,"ADMIN'),async(req,res)=>{
   }
   //replace curr pass of user with hashed pass
   //save6w
-}
+
 await newUserDoc.save()
 //send res
 res.status(201).json({message:"Password updated"})

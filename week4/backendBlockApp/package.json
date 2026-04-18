@@ -4,6 +4,7 @@
   "description": "BAckend for capstone project 1",
   "main": "server.js",
   "scripts": {
+    
     "test": "index.js"
   },
   "keywords": [],
