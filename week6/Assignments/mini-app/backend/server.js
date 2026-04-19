@@ -28,14 +28,14 @@ const connectDB = async () => {
             throw new Error("Missing or invalid DB_URL in .env. Please replace '<db_password>' with your actual password.");
         }
         await mongoose.connect(dbUrl);
-        console.log("✅ Database connected successfully");
+        console.log(" Database connected successfully");
         const port = process.env.PORT || 5000;
         app.listen(port, () => {
-            console.log(`🚀 Server is running on port ${port}`);
+            console.log(` Server is running on port ${port}`);
         });
     }
     catch (error) {
-        console.error("❌ Database connection failed:", error.message);
+        console.error("Database connection failed:", error.message);
         process.exit(1);
     }
 }
