@@ -8,9 +8,6 @@ This is a Node.js and Express backend built to manage Employee records using a M
 
 ## 🚀 Live Links
 
-🔹 Backend (Render):  
-https://atp-24eg112d34.onrender.com  
-
 🔹 API Endpoint:  
 https://atp-24eg112d34.onrender.com/employees  
 
