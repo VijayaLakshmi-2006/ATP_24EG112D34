@@ -15,18 +15,23 @@ config();
 const app = exp();
 
 // ================= CORS =================
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://atp-24-eg-112-d34.vercel.app",
-    ],
-    credentials: true,
-  })
-);
 
-// enable preflight requests
-app.options("*", cors());
+// single shared config — used by both middleware and preflight handler
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "https://atp-24-eg-112-d34.vercel.app",
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+
+// enable preflight requests for ALL routes
+// Express 5 requires "/{*path}" instead of "*" for wildcard matching
+app.options("/{*path}", cors(corsOptions));
 
 // ================= MIDDLEWARES =================
 
