@@ -1,145 +1,163 @@
-import exp from "express";
-import { UserModel } from "../models/UserModel.js";
-import { hash, compare } from "bcryptjs";
-import { config } from "dotenv";
+import express from "express";
+import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { verifyToken } from "../middlewares/VerifyToken.js";
-const { sign } = jwt;
-export const commonApp = exp.Router();
-import { upload } from "../config/multer.js";
-import { uploadToCloudinary } from "../config/cloudinaryUpload.js";
-import cloudinary from "../config/cloudinary.js";
-config();
+import multer from "multer";
+import cloudinary from "../Configs/cloudinary.js";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 
-//Request logging middleware
-commonApp.use((req, res, next) => {
-  console.log("HIT:", req.method, req.url);
-  next();
+// create router
+export const commonApp = express.Router();
+
+// ================= CLOUDINARY STORAGE =================
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => ({
+    folder: "blogApp",
+    allowed_formats: ["jpg", "png", "jpeg"],
+  }),
 });
 
-//Route for register
-commonApp.post("/users", upload.single("profileImageUrl"), async (req, res, next) => {
-  let cloudinaryResult;
-  try {
-    let allowedRoles = ["USER", "AUTHOR"];
-    //get user from req
-    const newUser = req.body;
-    console.log(newUser);
-    console.log(req.file);
+const upload = multer({ storage });
 
-    //check role
-    if (!allowedRoles.includes(newUser.role)) {
-      return res.status(400).json({ message: "Invalid role" });
-    }
+// ================= REGISTER =================
 
-    //Upload image to cloudinary from memoryStorage
-    if (req.file && process.env.CLOUDINARY_CLOUD_NAME) {
-      try {
-        cloudinaryResult = await uploadToCloudinary(req.file.buffer);
-      } catch (uploadErr) {
-        console.log("Cloudinary upload failed, continuing without image:", uploadErr.message);
+commonApp.post(
+  "/users",
+  upload.single("profileImageUrl"),
+  async (req, res) => {
+    try {
+      const usersCollection = req.app.get("usersCollection");
+
+      // parse user object
+      const userObj = JSON.parse(req.body.user);
+
+      // add image url if uploaded
+      if (req.file) {
+        userObj.profileImageUrl = req.file.path;
       }
+
+      // check existing email
+      const dbUser = await usersCollection.findOne({
+        email: userObj.email,
+      });
+
+      if (dbUser) {
+        return res.status(409).send({
+          message: "error occurred",
+          error: `email "${userObj.email}" already exists`,
+        });
+      }
+
+      // hash password
+      const hashedPassword = await bcryptjs.hash(
+        userObj.password,
+        7
+      );
+
+      userObj.password = hashedPassword;
+
+      // insert user
+      await usersCollection.insertOne(userObj);
+
+      res.status(201).send({
+        message: "User created",
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).send({
+        message: "Error creating user",
+        error: err.message,
+      });
     }
-
-    // console.log("cloudinaryResult", cloudinaryResult);
-    //add CDN link(secure_url) of image to newUserObj
-    newUser.profileImageUrl = cloudinaryResult?.secure_url || undefined;
-
-    //run validators manually
-    //hash password and replace plain with hashed one
-    newUser.password = await hash(newUser.password, 12);
-
-    //create New user document
-    const newUserDoc = new UserModel(newUser);
-
-    //save document
-    await newUserDoc.save();
-    //send res
-    res.status(201).json({ message: "User created" });
-  } catch (err) {
-    console.log("err is ", err);
-    //delete image from cloudinary
-    if (cloudinaryResult?.public_id) {
-      await cloudinary.uploader.destroy(cloudinaryResult.public_id);
-    }
-    next(err);
   }
-});
+);
 
-//Route for Login(USER, AUTHOR and ADMIN)
+// ================= LOGIN =================
+
 commonApp.post("/login", async (req, res) => {
-  //console.log(req.body)
-  //get user cred obj
-  const { email, password } = req.body;
-  //find user by email
-  const user = await UserModel.findOne({ email: email });
-  //if use not found
-  if (!user) {
-    return res.status(400).json({ message: "Invalid email" });
-  }
-  //compare password
-  const isMatched = await compare(password, user.password);
-  //if passwords not matched
-  if (!isMatched) {
-    return res.status(400).json({ message: "Invalid password" });
-  }
-  //create jwt
-  const signedToken = sign(
-    {
-      id: user._id,
-      email: email,
-      role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      profileImageUrl: user.profileImageUrl,
-    },
-    process.env.SECRET_KEY,
-    {
-      expiresIn: "1h",
-    },
-  );
+  try {
+    const usersCollection = req.app.get("usersCollection");
 
-  //set token to res header as httpOnly cookie
-  res.cookie("token", signedToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-  });
-  //remove password from user document
-  let userObj = user.toObject();
-  delete userObj.password;
+    const userCred = req.body;
 
-  //send res
-  res.status(200).json({ message: "login success", payload: userObj });
+    // check user
+    const dbUser = await usersCollection.findOne({
+      email: userCred.email,
+    });
+
+    if (!dbUser) {
+      return res.status(400).send({
+        message: "Invalid email",
+      });
+    }
+
+    // compare password
+    const status = await bcryptjs.compare(
+      userCred.password,
+      dbUser.password
+    );
+
+    if (!status) {
+      return res.status(400).send({
+        message: "Invalid password",
+      });
+    }
+
+    // create token
+    const signedToken = jwt.sign(
+      {
+        email: dbUser.email,
+      },
+      process.env.SECRET_KEY,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    // production check
+    const isProduction =
+      process.env.NODE_ENV === "production";
+
+    // send cookie
+    res.cookie("token", signedToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+    });
+
+    // remove password before sending
+    delete dbUser.password;
+
+    res.status(200).send({
+      message: "login success",
+      user: dbUser,
+      token: signedToken,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).send({
+      message: "Login failed",
+      error: err.message,
+    });
+  }
 });
 
-//Route for Logout
+// ================= LOGOUT =================
+
 commonApp.get("/logout", (req, res) => {
-  //delete token from cookie storage
+  const isProduction =
+    process.env.NODE_ENV === "production";
+
   res.clearCookie("token", {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
   });
-  //send res
-  res.status(200).json({ message: "Logout success" });
-});
 
-//Page refresh
-commonApp.get("/check-auth", verifyToken("USER", "AUTHOR", "ADMIN"), (req, res) => {
-  res.status(200).json({
-    message: "authenticated",
-    payload: req.user,
+  res.send({
+    message: "Logout success",
   });
-});
-
-//Change password
-commonApp.put("/password", verifyToken("USER", "AUTHOR", "ADMIN"), async (req, res) => {
-  //check current password and new password are same
-  //get current password of user/admin/author
-  //check the current password of req and user are not same
-  // hash new password
-  //replace current password of user with hashed new password
-  //save
-  //send res
 });
