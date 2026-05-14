@@ -29,37 +29,42 @@ function Register() {
 
   //When user registration submitted
   const onUserRegister = async (userObj) => {
-    console.log(userObj);
-    let {profileImageUrl}=userObj
-    // file + userObj -->FormData
-    //create ForMData object
+    console.log("form data:", userObj);
+
+    // ✅ Destructure the FileList OUT before stringifying —
+    //    FileList serialises to {} which corrupts the JSON payload
+    const { profileImageUrl, ...userDetails } = userObj;
+
     const formData = new FormData();
-    //add all user properties and file to this formdata object
-   formData.append("user", JSON.stringify(userObj));
-    //Append if image is exists
+
+    // Only plain data fields go into the JSON string
+    formData.append("user", JSON.stringify(userDetails));
+
+    // The actual file is appended separately so multer can read it
     if (profileImageUrl?.[0]) {
       formData.append("profileImageUrl", profileImageUrl[0]);
     }
-   console.log(profileImageUrl)
+
     try {
-      //start loading
       setLoading(true);
-      //make HTTP POST req to create User in backend
-      let res = await axios.post(`${getBackendUrl()}/auth/users`, formData, {
-        withCredentials: true,
-      });
+
+      const res = await axios.post(
+        `${getBackendUrl()}/auth/users`,
+        formData,
+        { withCredentials: true }
+      );
 
       if (res.status === 201) {
-        //navigate to Login
         navigate("/login");
       }
     } catch (err) {
       console.log("err in registration", err);
-      let extractedError = err.response?.data?.message || err.response?.data?.error || err.message || "Registration failed";
-      if (typeof extractedError === 'object') {
-        extractedError = extractedError.message || JSON.stringify(extractedError);
-      }
-      setApiError(extractedError);
+      const raw =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
+        "Registration failed";
+      setApiError(typeof raw === "object" ? JSON.stringify(raw) : raw);
     } finally {
       setLoading(false);
     }
