@@ -35,11 +35,7 @@ function Register() {
     //create ForMData object
     const formData = new FormData();
     //add all user properties and file to this formdata object
-    formData.append("role", userObj.role);
-    formData.append("firstName", userObj.firstName);
-    formData.append("lastName", userObj.lastName);
-    formData.append("email", userObj.email);
-    formData.append("password", userObj.password);
+   formData.append("user", JSON.stringify(userObj));
     //Append if image is exists
     if (profileImageUrl?.[0]) {
       formData.append("profileImageUrl", profileImageUrl[0]);
