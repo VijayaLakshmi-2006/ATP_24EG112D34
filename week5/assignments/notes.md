@@ -16,6 +16,10 @@
 |                                        |
 +------------------------------------------+
 
+
+
+
+
 padding and margin 
     1 mentioned all sides
     2 mentioned (top and bottom)
