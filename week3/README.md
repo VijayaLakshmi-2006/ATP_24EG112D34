@@ -115,7 +115,7 @@ backend/
 ├── APIs/                         # API route handlers
 │   ├── UserAPI.js                # User-related APIs
 │   ├── ProductAPI.js             # Product-related APIs
-│   └── AdminAPI.js               # Admin-related APIs
+│   
 │
 ├── models/                       # MongoDB schemas/models
 │   ├── UserModel.js              # User schema
