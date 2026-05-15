@@ -26,7 +26,6 @@ export const useAuth = create((set) => ({
       });
       //update state
       if (res.status === 200) {
-        // backend sends { message, user, token } — not payload
         set({
           currentUser: res.data?.user,
           loading: false,
@@ -73,12 +72,10 @@ export const useAuth = create((set) => ({
   // restore login
   checkAuth: async () => {
     try {
-      const res = await axios.get(`${getBackendUrl()}/auth/check-auth`, {
-        withCredentials: true,
-      });
+      const res = await axios.get(`${getBackendUrl()}/auth/check-auth`, { withCredentials: true });
 
-      // backend sends { message: "authenticated", user: {...} }
-      if (res.data?.user && res.data?.message === "authenticated") {
+      // Validate that response has actual user data
+      if (res.data?.user && res.data?.message === "Authenticated") {
         set({
           currentUser: res.data.user,
           isAuthenticated: true,
@@ -88,8 +85,19 @@ export const useAuth = create((set) => ({
         set({ currentUser: null, isAuthenticated: false, loading: false });
       }
     } catch (err) {
-      // 401 = not logged in, 404 = endpoint missing → both = unauthenticated
-      set({ currentUser: null, isAuthenticated: false, loading: false });
+      // If user is not logged in → do nothing
+      if (err.response?.status === 401) {
+        set({
+          currentUser: null,
+          isAuthenticated: false,
+          loading: false,
+        });
+        return;
+      }
+
+      // other errors
+      console.error("Auth check failed:", err);
+      set({ loading: false, isAuthenticated: false, currentUser: null });
     }
   },
 }));

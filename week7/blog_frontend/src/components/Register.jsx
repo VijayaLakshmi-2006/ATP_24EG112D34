@@ -29,42 +29,41 @@ function Register() {
 
   //When user registration submitted
   const onUserRegister = async (userObj) => {
-    console.log("form data:", userObj);
-
-    // ✅ Destructure the FileList OUT before stringifying —
-    //    FileList serialises to {} which corrupts the JSON payload
-    const { profileImageUrl, ...userDetails } = userObj;
-
+    console.log(userObj);
+    let {profileImageUrl}=userObj
+    // Remove profileImageUrl from userObj before stringifying
+    const userData = { ...userObj };
+    delete userData.profileImageUrl;
+    
+    // file + userObj -->FormData
+    //create ForMData object
     const formData = new FormData();
-
-    // Only plain data fields go into the JSON string
-    formData.append("user", JSON.stringify(userDetails));
-
-    // The actual file is appended separately so multer can read it
+    //add all user properties and file to this formdata object
+   formData.append("user", JSON.stringify(userData));
+    //Append if image is exists
     if (profileImageUrl?.[0]) {
       formData.append("profileImageUrl", profileImageUrl[0]);
     }
-
+   console.log(profileImageUrl)
     try {
+      //start loading
       setLoading(true);
-
-      const res = await axios.post(
-        `${getBackendUrl()}/auth/users`,
-        formData,
-        { withCredentials: true }
-      );
+      //make HTTP POST req to create User in backend
+      let res = await axios.post(`${getBackendUrl()}/auth/users`, formData, {
+        withCredentials: true,
+      });
 
       if (res.status === 201) {
+        //navigate to Login
         navigate("/login");
       }
     } catch (err) {
       console.log("err in registration", err);
-      const raw =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        err.message ||
-        "Registration failed";
-      setApiError(typeof raw === "object" ? JSON.stringify(raw) : raw);
+      let extractedError = err.response?.data?.message || err.response?.data?.error || err.message || "Registration failed";
+      if (typeof extractedError === 'object') {
+        extractedError = extractedError.message || JSON.stringify(extractedError);
+      }
+      setApiError(extractedError);
     } finally {
       setLoading(false);
     }

@@ -3,52 +3,44 @@ import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { UserModel } from "../models/UserModel.js";
 
 // create router
 export const commonApp = express.Router();
 
-// ================= MULTER (memory storage) =================
-// Store file in memory, then upload to Cloudinary manually.
-// This avoids the missing "multer-storage-cloudinary" package.
+// ================= CLOUDINARY STORAGE =================
 
-const upload = multer({ storage: multer.memoryStorage() });
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => ({
+    folder: "blogApp",
+    allowed_formats: ["jpg", "png", "jpeg"],
+  }),
+});
 
-// Helper: upload buffer to Cloudinary
-const uploadToCloudinary = (buffer, mimetype) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: "blogApp", allowed_formats: ["jpg", "png", "jpeg"] },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-    stream.end(buffer);
-  });
-};
+const upload = multer({ storage });
 
 // ================= REGISTER =================
 
 commonApp.post(
   "/users",
   upload.single("profileImageUrl"),
-  async (req, res, next) => {
+  async (req, res) => {
     try {
-      // parse user object sent as JSON string in FormData
+
+      // parse user object
       const userObj = JSON.parse(req.body.user);
 
-      // upload profile image to Cloudinary if provided
+      // add image url if uploaded
       if (req.file) {
-        const result = await uploadToCloudinary(
-          req.file.buffer,
-          req.file.mimetype
-        );
-        userObj.profileImageUrl = result.secure_url;
+        userObj.profileImageUrl = req.file.path;
       }
 
-      // check if email already exists
-      const dbUser = await UserModel.findOne({ email: userObj.email });
+      // check existing email
+      const dbUser = await UserModel.findOne({
+        email: userObj.email,
+      });
 
       if (dbUser) {
         return res.status(409).send({
@@ -58,30 +50,41 @@ commonApp.post(
       }
 
       // hash password
-      const hashedPassword = await bcryptjs.hash(userObj.password, 7);
+      const hashedPassword = await bcryptjs.hash(
+        userObj.password,
+        7
+      );
+
       userObj.password = hashedPassword;
 
-      // create and save user using Mongoose model
-      const newUser = new UserModel(userObj);
-      await newUser.save();
+      // insert user
+      await UserModel.create(userObj);
 
       res.status(201).send({
         message: "User created",
       });
     } catch (err) {
-      next(err);
+      console.log(err);
+
+      res.status(500).send({
+        message: "Error creating user",
+        error: err.message,
+      });
     }
   }
 );
 
 // ================= LOGIN =================
 
-commonApp.post("/login", async (req, res, next) => {
+commonApp.post("/login", async (req, res) => {
   try {
+
     const userCred = req.body;
 
-    // check user exists
-    const dbUser = await UserModel.findOne({ email: userCred.email }).lean();
+    // check user
+    const dbUser = await UserModel.findOne({
+      email: userCred.email,
+    });
 
     if (!dbUser) {
       return res.status(400).send({
@@ -90,7 +93,10 @@ commonApp.post("/login", async (req, res, next) => {
     }
 
     // compare password
-    const status = await bcryptjs.compare(userCred.password, dbUser.password);
+    const status = await bcryptjs.compare(
+      userCred.password,
+      dbUser.password
+    );
 
     if (!status) {
       return res.status(400).send({
@@ -98,10 +104,9 @@ commonApp.post("/login", async (req, res, next) => {
       });
     }
 
-    // create token — include id and role so verifyToken can read them
+    // create token
     const signedToken = jwt.sign(
       {
-        id: dbUser._id,
         email: dbUser.email,
         role: dbUser.role,
       },
@@ -112,7 +117,8 @@ commonApp.post("/login", async (req, res, next) => {
     );
 
     // production check
-    const isProduction = process.env.NODE_ENV === "production";
+    const isProduction =
+      process.env.NODE_ENV === "production";
 
     // send cookie
     res.cookie("token", signedToken, {
@@ -130,41 +136,47 @@ commonApp.post("/login", async (req, res, next) => {
       token: signedToken,
     });
   } catch (err) {
-    next(err);
+    console.log(err);
+
+    res.status(500).send({
+      message: "Login failed",
+      error: err.message,
+    });
   }
 });
 
-// ================= CHECK AUTH (restore session on page reload) =================
+// ================= CHECK AUTH =================
 
 commonApp.get("/check-auth", async (req, res) => {
   try {
     const token = req.cookies?.token;
-
     if (!token) {
       return res.status(401).send({ message: "Not authenticated" });
     }
 
-    // verify token
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    
+    const dbUser = await UserModel.findOne({ email: decoded.email });
 
-    // fetch fresh user from DB
-    const user = await UserModel.findById(decoded.id).lean();
-
-    if (!user) {
-      return res.status(401).send({ message: "User not found" });
+    if (!dbUser) {
+      return res.status(404).send({ message: "User not found" });
     }
 
-    // remove password before sending
-    delete user.password;
+    delete dbUser.password;
 
     res.status(200).send({
-      message: "authenticated",
-      user,
+      message: "Authenticated",
+      user: dbUser,
     });
   } catch (err) {
-    res.status(401).send({ message: "Invalid or expired token" });
+    res.status(401).send({
+      message: "Authentication failed",
+      error: err.message,
+    });
   }
 });
+
+// ================= LOGOUT =================
 
 commonApp.get("/logout", (req, res) => {
   const isProduction = process.env.NODE_ENV === "production";

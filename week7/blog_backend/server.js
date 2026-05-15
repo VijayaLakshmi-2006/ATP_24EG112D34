@@ -9,29 +9,21 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import multer from "multer";
 
+
 config();
 
 // create express app
 const app = exp();
 
 // ================= CORS =================
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 
-// single shared config — used by both middleware and preflight handler
-const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "https://atp-24-eg-112-d34.vercel.app",
-  ],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-
-app.use(cors(corsOptions));
-
-// enable preflight requests for ALL routes
-// Express 5 requires "/{*path}" instead of "*" for wildcard matching
-app.options("/{*path}", cors(corsOptions));
+// enable preflight requests
 
 // ================= MIDDLEWARES =================
 
@@ -48,6 +40,7 @@ app.use("/author-api", authorApp);
 app.use("/admin-api", adminApp);
 app.use("/auth", commonApp);
 
+
 // ================= ROOT ROUTE =================
 
 app.get("/", (req, res) => {
@@ -62,7 +55,7 @@ const connectDB = async () => {
 
     console.log("DB server connected");
 
-    const port = process.env.PORT || 50001;
+    const port = process.env.PORT || 5001;
 
     app.listen(port, () => {
       console.log(`server listening on ${port}..`);
@@ -77,8 +70,7 @@ connectDB();
 // ================= INVALID PATH HANDLER =================
 
 app.use((req, res, next) => {
-  console.log(req.url);
-
+  console.log("Invalid path:", req.url);
   res.status(404).json({
     message: `path ${req.url} is invalid`,
   });
